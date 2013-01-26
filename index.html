@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>VDS Dash Display</title>
+
+		<link rel="stylesheet" href="themes/vds-dashdisp-default.min.css" />
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.1.0/jquery.mobile.structure-1.1.0.min.css" />
+		<link rel="stylesheet" href="js/datatables/css/jquery.dataTables.css" />
+
+		<link rel="stylesheet" href="css/vds.css" />
+        
+		<script src="js/jquery-1.7.2.min.js"></script>
+		<script src="js/jquery.mobile-1.1.0/jquery.mobile.js"></script>
+
+        <script src="js/canwsclient.js" type="text/javascript"></script>
+
+        <script src="js/jquery-ui-1.8.18.custom.min.js" type="text/javascript"></script>
+        <script src="js/raphael-min.js" type="text/javascript"></script>
+        <script src="js/globalize.min.js" type="text/javascript"></script>
+        <script src="js/wijmo/jquery.wijmo.raphael.js" type="text/javascript"></script>
+        <script src="js/wijmo/jquery.wijmo.wijgauge.js" type="text/javascript"></script>
+        <script src="js/wijmo/jquery.wijmo.wijradialgauge.js" type="text/javascript"></script>
+        <script src="js/wijmo/jquery.wijmo.wijlineargauge.js" type="text/javascript"></script>
+        <script src="js/wijmo/jquery.wijmo.wijchartcore.js" type="text/javascript"></script>
+        <script src="js/wijmo/jquery.wijmo.wijlinechart.js" type="text/javascript"></script>
+        
+        <script src="js/datatables/jquery.dataTables.min.js" type="text/javascript"></script>
+
+        <script src="js/vdsgauges.js" type="text/javascript"></script>
+        <script src="js/vdscharts.js" type="text/javascript"></script>
+
+        <script type="text/javascript">
+            engine_current_page = 1;
+            engine_n_pages = 3;
+
+            car_current_page = 1;
+            car_n_pages = 3;
+            car_page_names = new Array ("Car Speed & RPM", "Tire Pressure & Temp", "Page 3");
+
+            data_current_page = 1;
+            data_n_pages = 3;
+            data_page_names = new Array ("Raw CAN Data", "Speed & Revs", "Page 3");
+
+            var wsStatusTimer = null;
+            wsStatusTimerInterval = 800;
+            var wsStatusTimerActive = false;
+
+            $(document).ready(function () {
+                drawGaugeMedium("#gaugesHolder1", "Oil Temp", "&deg;C", "EOT", 20, 20, 60, 150, 10, 2, 0, 120);
+                drawGaugeMedium("#gaugesHolder1", "Water Temp", "&deg;C", "ECT", 270, 20, 40, 120, 10, 2, 0, 100);
+                drawGaugeMedium("#gaugesHolder1", "Air Temp", "&deg;C", "ACT", 520, 20, 0, 50, 10, 2);
+                drawGaugeMedium("#gaugesHolder1", "Oil Press", "PSI", "EOP", 145, 210, 0, 100, 10, 2.5, 20, 80);
+                drawGaugeMedium("#gaugesHolder1", "Manifold", "PSI", "MAP", 395, 210, 0, 150, 25, 5, 35, 115);
+                drawFuelGauge("#gaugesHolder1", 20, 250);
+                drawGaugeLarge("#carPageHolder1", "MPH", "", "car_speed", 0, 200, 20, 2.5);
+                drawGaugeLarge("#carPageHolder1", "RPM", "", "RPM", 0, 9.5, 1, 0.2, 0, 8.5);
+
+                wsStatusTimer = setInterval(blinkStatus, wsStatusTimerInterval);
+                wsStatusTimerActive = true;
+
+            });
+            
+            var blinkStatus = function(){
+                $('#wsconnstatus').toggle();
+            };
+            
+            // moving between pages
+            $("#engine_page").live('pageshow', function() {
+                setPageLabel("Engine Sensors", engine_current_page, engine_n_pages);
+                $("tspan").attr("dy", 5);
+            });
+
+            $("#car_page").live('pageshow', function() {
+                setPageLabel(car_page_names[car_current_page-1], car_current_page, car_n_pages);
+                $("tspan").attr("dy", 8);
+            });
+
+            $("#data_page").live('pageshow', function() {
+                setPageLabel("Raw Sensor Data");
+            });
+
+            $("#log_page").live('pageshow', function() {
+                setPageLabel("Data Logging");
+            });
+            
+            // engine page subpage transitions
+            $(document).delegate('#enginePageLeftButton', 'click', function() {
+                $("#gaugesHolder" + engine_current_page).hide();
+                if (engine_current_page == 1) {
+                    engine_current_page = engine_n_pages;
+                } else {
+                    engine_current_page -= 1;
+                }
+                $("#gaugesHolder" + engine_current_page).show();
+                setPageLabel("Engine Sensors", engine_current_page, engine_n_pages);
+            });
+
+            $(document).delegate('#enginePageRightButton', 'click', function() {
+                $("#gaugesHolder" + engine_current_page).hide();
+                if (engine_current_page == engine_n_pages) {
+                    engine_current_page = 1;
+                } else {
+                    engine_current_page += 1;
+                }
+                $("#gaugesHolder" + engine_current_page).show();
+                setPageLabel("Engine Sensors", engine_current_page, engine_n_pages);
+            });
+
+            // car page subpage transitions
+            $(document).delegate('#carPageLeftButton', 'click', function() {
+                $("#carPageHolder" + car_current_page).hide();
+                if (car_current_page == 1) {
+                    car_current_page = car_n_pages;
+                } else {
+                    car_current_page -= 1;
+                }
+                $("#carPageHolder" + car_current_page).show();
+                setPageLabel(car_page_names[car_current_page-1], car_current_page, car_n_pages);
+            });
+
+            $(document).delegate('#carPageRightButton', 'click', function() {
+                $("#carPageHolder" + car_current_page).hide();
+                if (car_current_page == car_n_pages) {
+                    car_current_page = 1;
+                } else {
+                    car_current_page += 1;
+                }
+                $("#carPageHolder" + car_current_page).show();
+                setPageLabel(car_page_names[car_current_page-1], car_current_page, car_n_pages);
+            });
+
+            // data page subpage transitions
+            $(document).delegate('#dataPageLeftButton', 'click', function() {
+                $("#dataPageHolder" + data_current_page).hide();
+                if (data_current_page == 1) {
+                    data_current_page = data_n_pages;
+                } else {
+                    data_current_page -= 1;
+                }
+                $("#dataPageHolder" + data_current_page).show();
+                setPageLabel(data_page_names[data_current_page-1], data_current_page, data_n_pages);
+            });
+
+            $(document).delegate('#dataPageRightButton', 'click', function() {
+                $("#dataPageHolder" + data_current_page).hide();
+                if (data_current_page == data_n_pages) {
+                    data_current_page = 1;
+                } else {
+                    data_current_page += 1;
+                }
+                $("#dataPageHolder" + data_current_page).show();
+                setPageLabel(data_page_names[data_current_page-1], data_current_page, data_n_pages);
+            });
+
+            $(document).delegate('.rawDataEdit', 'click', function() {
+
+            });
+            
+			$(document).ready(function() {
+                $("#rawCANdata").dataTable( {
+                    //"sScrollY": "360px",
+                    "bPaginate": false,
+                    "bFilter": false,
+                    "bInfo": false,
+                    "bAutoWidth": false,
+                    "aoColumns": [
+                        { "sWidth": "50px" },
+                        { "sWidth": "180px" },
+                        { "sWidth": "40px", "bSortable": false },
+                        { "sWidth": "30px", "bSortable": false },
+                        { "sWidth": "30px", "bSortable": false },
+                        { "sWidth": "30px", "bSortable": false }
+                    ],
+                    "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
+                        /* Append the grade to the default row class name */
+                        if ( aData[4] == "A" ) {
+                            $('td:eq(4)', nRow).html( '<b>A</b>' );
+                        }
+                        return nRow;
+                    },
+
+                });
+            });
+            
+        </script>
+    </head>
+
+	<body>
+        <div id="info_header">
+            <div id="page_label">Engine Sensors (1/3)</div>
+        </div>
+
+        <div id="wsconnstatus" style="position: absolute; top: 5px; right: 5px; background-color: red; z-index: 1200">No Data</div>
+        
+        <div data-role="page" id="engine_page" style="padding-top: 20px">
+            <div data-role="content" data-theme="a" style="width: 770px; height: 392px;">
+                <div id="gaugesHolder1" style="padding-left: 3px; padding-right: 3px"></div>
+                <div id="gaugesHolder2" style="display: none"></div>
+                <div id="gaugesHolder3" style="display: none">page 3</div>
+
+                <a href="#" id="enginePageLeftButton" data-role="button" data-icon="arrow-l" data-iconpos="notext" style="position: absolute; top: 200px; left: 0px;">Prev</a>
+                <a href="#" id="enginePageRightButton" data-role="button" data-icon="arrow-r" data-iconpos="notext" style="position: absolute; top: 200px; right: 0px;">Next</a>
+            </div>
+
+            <div data-role="footer" data-position="fixed" data-id="tabfooter" style="width: 800px">
+                <div data-role="navbar" style="width: 700px; float: left;">
+                    <ul>
+                        <li><a href="" class="ui-btn-active ui-state-persist">Engine</a></li>
+                        <li><a href="#car_page">Car</a></li>
+                        <li><a href="#data_page">Data</a></li>
+                        <li><a href="#log_page">Log</a></li>
+                    </ul>
+                </div>
+                <div style="padding-left: 712px; padding-top: 3px;">
+                    <a href="" data-role="button" data-icon="arrow-u" data-iconpos="right" data-mini="true">Menu</a>
+                </div>
+            </div>
+        </div>
+
+        <div data-role="page" id="car_page" style="padding-top: 20px">
+            <div data-role="content" data-theme="a" style="width: 770px; height: 392px;">
+                <div id="carPageHolder1" style="padding-left: 25px; padding-right: 25px;">
+                </div>
+                
+                <div id="carPageHolder2" style="display: none">
+                    <div id="tpms" align="center" style="height:100%; width: 100%;">
+                        <img src="img/car_outline_tires.png">
+                        <div id="tpms_lf" class="tpmsvalue" style="top: 22%; left: 26%;"></div>
+                        <div id="tpms_rf" class="tpmsvalue" style="top: 22%; left: 64%;"></div>
+                        <div id="tpms_lr" class="tpmsvalue" style="top: 71%; left: 26%;"></div>
+                        <div id="tpms_rr" class="tpmsvalue" style="top: 71%; left: 64%;"></div>
+                    </div>
+                </div>
+                
+                <div id="carPageHolder3" style="display: none">3</div>
+
+                <a href="#" id="carPageLeftButton" data-role="button" data-icon="arrow-l" data-iconpos="notext" style="position: absolute; top: 200px; left: 0px;">Prev</a>
+                <a href="#" id="carPageRightButton" data-role="button" data-icon="arrow-r" data-iconpos="notext" style="position: absolute; top: 200px; right: 0px;">Next</a>
+            </div>
+            <div data-role="footer" data-position="fixed" data-id="tabfooter" style="width: 800px">
+                <div data-role="navbar" style="width: 700px; float: left;">
+                    <ul>
+                        <li><a href="#engine_page">Engine</a></li>
+                        <li><a href="" class="ui-btn-active ui-state-persist">Car</a></li>
+                        <li><a href="#data_page">Data</a></li>
+                        <li><a href="#log_page">Log</a></li>
+                    </ul>
+                </div>
+                <div style="padding-left: 712px; padding-top: 3px;">
+                    <a href="" data-role="button" data-icon="arrow-u" data-iconpos="right" data-mini="true">Menu</a>
+                </div>
+            </div>
+        </div>
+
+        <div data-role="page" id="data_page" style="padding-top: 20px">
+            <div data-role="content" data-theme="a" style="width: 770px; height: 392px;">
+                <div id="dataPageHolder1" style="font-size: 16px; margin-left: 25px; margin-right: 25px;">
+                    <table id="rawCANdata" style="padding: 0px; width: 660px;">
+                    	<thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Value</th>
+                                <th>Min</th>
+                                <th>Max</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                    </table>
+                </div>
+
+                <div id="dataPageHolder2" style="display: none">
+                    <div id="chart5minRPM"></div>
+                </div>
+                
+                <div id="dataPageHolder3" style="display: none">3</div>
+
+                <a href="#" id="dataPageLeftButton" data-role="button" data-icon="arrow-l" data-iconpos="notext" style="position: absolute; top: 200px; left: 0px;">Prev</a>
+                <a href="#" id="dataPageRightButton" data-role="button" data-icon="arrow-r" data-iconpos="notext" style="position: absolute; top: 200px; right: 0px;">Next</a>
+            </div>
+            <div data-role="footer" data-position="fixed" data-id="tabfooter" style="width: 800px">
+                <div data-role="navbar" style="width: 700px; float: left;">
+                    <ul>
+                        <li><a href="#engine_page">Engine</a></li>
+                        <li><a href="#car_page">Car</a></li>
+                        <li><a href="" class="ui-btn-active ui-state-persist">Data</a></li>
+                        <li><a href="#log_page">Log</a></li>
+                    </ul>
+                </div>
+                <div style="padding-left: 712px; padding-top: 3px;">
+                    <a href="" data-role="button" data-icon="arrow-u" data-iconpos="right" data-mini="true">Menu</a>
+                </div>
+            </div>
+        </div>
+
+        <div data-role="page" id="log_page" style="padding-top: 20px">
+            <div data-role="content" data-theme="a" style="width: 770px; height: 412px;">
+                Log - capture vehicle data
+                <div id="holder" style="height:300px;float:left; position:absolute; "></div>
+                <div style="padding-top: 10px">
+                    Rate: <span id="CANmsgspsec" style="width: 50px"></span> /s  
+                    Last: <span id="lastCANmessage"></span>
+                </div>
+                <div id="debug"></div>
+                <div id="error"></div>
+            </div>
+            <div data-role="footer" data-position="fixed" data-id="tabfooter" style="width: 800px">
+                <div data-role="navbar" style="width: 700px; float: left;">
+                    <ul>
+                        <li><a href="#engine_page">Engine</a></li>
+                        <li><a href="#car_page">Car</a></li>
+                        <li><a href="#data_page">Data</a></li>
+                        <li><a href="" class="ui-btn-active ui-state-persist">Log</a></li>
+                    </ul>
+                </div>
+                <div style="padding-left: 712px; padding-top: 3px;">
+                    <a href="" data-role="button" data-icon="arrow-u" data-iconpos="right" data-mini="true">Menu</a>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

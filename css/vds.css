@@ -1,0 +1,104 @@
+/*.ui-content {
+    background : transparent url(../img/background_porsche.png) 0 0 no-repeat fixed !important;
+    background-size : cover;
+}​*/
+
+body {
+    font-family: "Helvetica", "Arial";
+}
+
+#info_header {
+    width: 800px;
+    height: 20px;
+	background-color: #0071BC;
+    color: white;
+    padding: 0px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    color: white;
+    z-index: 1000;
+    font-size: 12px;
+}
+
+#page_label {
+    text-align: center;
+    padding: 3px 10px 3px 10px;
+    margin: 0 auto;
+}
+
+.table_heading {
+	border-top: 2px solid grey;
+	border-left: 2px solid grey;
+	border-right: 2px solid grey;
+	margin: 1px 1px 0px 1px;
+	padding: 8px 9px 6px 9px;
+	height: 20px;
+	font-weight: bold;
+	float: left;
+}
+
+.table_heading_sortable {
+	border-top: 2px solid grey;
+	border-left: 2px solid grey;
+	border-right: 2px solid grey;
+	margin: 1px 1px 0px 1px;
+	padding: 8px 9px 6px 9px;
+	height: 20px;
+	font-weight: bold;
+	float: left;
+}
+
+.datalabel {
+	border: 1px dotted grey;
+	margin: 1px;
+	padding: 6px 10px 6px 10px;
+	height: 16px;
+	font-weight: bold;
+	float: left;
+}
+
+.datavalue {
+	border: 1px dotted grey;
+	margin: 1px;
+	padding: 6px 10px 6px 10px;
+	height: 16px;
+	display: table-cell;
+	vertical-align: middle;
+	float: left;
+}
+
+.tpmsvalue {
+    width: 80px;
+    height: 45px;
+    border: 1px dotted grey;
+    font-size: 20px;
+    position: absolute;
+    text-align: center;
+    vertical-align: center;
+}
+
+#wsconnstatus {
+    width: 50px;
+    height: 50px;
+   // display: block;
+    border-radius: 25px;
+    -moz-border-radius: 35px;
+    -webkit-border-radius: 25px;
+    -khtml-border-radius; 25px;
+    font-size: 12px;
+    color: #fff;
+    line-height: 50px;
+    text-align: center;
+    background: red;
+    border: 2px solid white;
+}
+
+.ui-navbar .ui-btn-text {
+    font-size: 16px !important;
+    padding
+}
+
+#rawCANdata .ui-btn {
+    margin: 0px !important;
+}
